@@ -6,6 +6,7 @@ const cookieSession = require('cookie-session');
 const { db, getSettings } = require('./db');
 const { expireStale } = require('./lib/pools');
 const opay = require('./lib/opay');
+const brand = require('./lib/brand');
 
 const app = express();
 app.set('view engine', 'ejs');
@@ -39,7 +40,10 @@ const fmtUtc = s => (s ? fmtDate(s.replace(' ', 'T') + 'Z') : '');
 app.use((req, res, next) => {
   if (!req.session.csrf) req.session.csrf = crypto.randomBytes(16).toString('hex');
   res.locals.csrf = req.session.csrf;
-  res.locals.settings = getSettings();
+  const settings = getSettings();
+  res.locals.settings = settings;
+  res.locals.brand = brand.assets(settings);
+  res.locals.themeCss = brand.themeCss(settings);
   res.locals.naira = naira;
   res.locals.fmtDate = fmtDate;
   res.locals.fmtUtc = fmtUtc;

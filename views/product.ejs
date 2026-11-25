@@ -3,7 +3,7 @@
 <p class="small" style="margin-top:18px"><a href="/">Shop</a><% if (p.category_name) { %> › <a href="/category/<%= p.category_slug %>"><%= p.category_name %></a><% } %></p>
 <div class="pgrid" style="margin-top:8px">
   <div>
-    <div class="pimage"><% if (p.image) { %><img src="/static/uploads/<%= p.image %>" alt="<%= p.title %>"><% } else { %><span style="font-size:4rem;opacity:.5">🧺</span><% } %></div>
+    <div class="pimage"><% if (p.image) { %><img src="/static/uploads/<%= p.image %>" alt="<%= p.title %>"><% } else { %><img src="<%= brand.logo %>" alt="" style="width:34%;height:auto;object-fit:contain;opacity:.35"><% } %></div>
     <div class="panel" style="margin-top:18px">
       <div class="row"><h1 style="margin:0"><%= p.title %></h1><span class="badge b-<%= p.status %>"><%= p.status === 'closed' ? 'Full' : p.status %></span></div>
       <dl class="facts">
@@ -16,7 +16,7 @@
       </dl>
       <% if (p.description) { %><h3>About this item</h3><p class="desc"><%= p.description %></p><% } %>
       <% if (p.location_notes) { %><p class="small muted"><%= p.location_notes %></p><% } %>
-      <% if (recent.length) { %>
+      <% if (recent.length && settings.show_recent_joiners === '1') { %>
         <h3 style="margin-top:18px">Recently joined</h3>
         <ul class="joined"><% recent.forEach(r => { %><li><%= r.display.trim() %> · <%= r.slots %> share<%= r.slots > 1 ? 's' : '' %></li><% }) %></ul>
       <% } %>
@@ -25,13 +25,13 @@
 
   <aside class="panel" id="join">
     <h2 style="margin-bottom:4px">Who has paid</h2>
-    <div class="bigcounts">
+    <div class="bigcounts" style="<%= settings.show_reserved_count === '1' ? '' : 'grid-template-columns:1fr 1fr' %>">
       <div class="g"><b><%= s.paid %></b><span class="small">paid</span></div>
-      <div class="a"><b><%= s.held %></b><span class="small">reserved</span></div>
+      <% if (settings.show_reserved_count === '1') { %><div class="a"><b><%= s.held %></b><span class="small">reserved</span></div><% } %>
       <div class="r"><b><%= s.remaining %></b><span class="small">left</span></div>
     </div>
     <%- include('partials/progress', { s, total: p.total_slots }) %>
-    <p class="tiny muted">"Reserved" shares are held for people who have started paying. If they don't complete payment in time, the share opens up again.</p>
+    <p class="tiny muted" <%- settings.show_reserved_count === '1' ? '' : 'hidden' %>>"Reserved" shares are held for people who have started paying. If they don't complete payment in time, the share opens up again.</p>
 
     <% if (p.status !== 'open') { %>
       <div class="closedbox"><%= p.status === 'closed' ? 'All ' + p.total_slots + ' shares are paid for. Entry is closed.' : p.status === 'completed' ? 'This item has been shared. Thank you!' : 'This item is not taking contributors.' %></div>

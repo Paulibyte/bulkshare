@@ -5,7 +5,8 @@ const bcrypt = require('bcryptjs');
 const { db, getSettings, setSetting } = require('../db');
 const pools = require('../lib/pools');
 const opay = require('../lib/opay');
-const { verifyCsrf, flash, slugify, productUpload, proofDir } = require('../lib/util');
+const { verifyCsrf, flash, slugify, productUpload, proofDir, brandUpload } = require('../lib/util');
+const brand = require('../lib/brand');
 
 const router = express.Router();
 const ORDER_STATUSES = ['pending', 'awaiting_confirmation', 'paid', 'refund_due', 'refunded', 'rejected', 'expired', 'cancelled'];
@@ -275,12 +276,37 @@ router.post('/setup/:kind', verifyCsrf, (req, res) => {
 
 // ---- settings ----
 router.get('/settings', (req, res) => res.render('admin/settings', { title: 'Settings', s: getSettings() }));
-router.post('/settings', verifyCsrf, (req, res) => {
-  for (const k of ['site_name', 'tagline', 'bank_name', 'account_name', 'account_number', 'bank_hold_hours', 'opay_hold_minutes', 'whatsapp', 'support_phone']) {
-    if (k in req.body) setSetting(k, String(req.body[k]).trim().slice(0, 200));
-  }
-  flash(req, 'success', 'Settings saved.');
-  res.redirect('/admin/settings');
+const TEXT_SETTINGS = ['site_name', 'tagline', 'hero_title', 'hero_text', 'announcement', 'button_label', 'footer_text',
+  'meta_description', 'contact_email', 'address', 'facebook', 'instagram', 'tiktok',
+  'bank_name', 'account_name', 'account_number', 'bank_hold_hours', 'opay_hold_minutes', 'whatsapp', 'support_phone'];
+const LONG = { hero_text: 600, meta_description: 300, announcement: 250 };
+const removeTmp = files => Object.values(files || {}).flat().forEach(f => fs.unlink(f.path, () => {}));
+
+router.post('/settings', brandUpload.fields([{ name: 'logo_file', maxCount: 1 }, { name: 'favicon_file', maxCount: 1 }]), verifyCsrf, async (req, res) => {
+  const b = req.body, files = req.files || {};
+  try {
+    if (b.section === 'all' || !b.section) {
+      for (const k of TEXT_SETTINGS) if (k in b) setSetting(k, String(b[k]).trim().slice(0, LONG[k] || 200));
+      for (const k of ['primary_color', 'accent_color', 'bg_color']) if (k in b) setSetting(k, brand.clean(b[k], getSettings()[k]));
+      setSetting('header_style', b.header_style === 'brand' ? 'brand' : 'light');
+      for (const k of ['show_name_with_logo', 'show_recent_joiners', 'show_reserved_count']) setSetting(k, b[k] ? '1' : '0');
+    }
+    const logo = files.logo_file && files.logo_file[0];
+    const fav = files.favicon_file && files.favicon_file[0];
+    if (logo) {
+      setSetting('logo', await brand.saveLogo(logo.path));
+      if (!fav && b.favicon_from_logo) setSetting('favicon', await brand.saveFavicons(logo.path));
+    }
+    if (fav) setSetting('favicon', await brand.saveFavicons(fav.path));
+    if (b.reset_logo) setSetting('logo', '');
+    if (b.reset_favicon) setSetting('favicon', '');
+    if (b.reset_colors) { setSetting('primary_color', '#14532d'); setSetting('accent_color', '#e8a317'); setSetting('bg_color', '#f7f4ee'); }
+    flash(req, 'success', 'Settings saved.');
+  } catch (e) {
+    console.error('[settings]', e);
+    flash(req, 'error', 'Could not process that image. Use a PNG, JPG or WebP under 5MB.');
+  } finally { removeTmp(files); }
+  res.redirect('/admin/settings' + (b.tab ? '#' + b.tab : ''));
 });
 router.post('/password', verifyCsrf, (req, res) => {
   const u = db.prepare('SELECT * FROM admins WHERE id = ?').get(req.session.adminId);

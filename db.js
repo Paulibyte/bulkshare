@@ -73,6 +73,24 @@ const defaults = {
   bank_hold_hours: '6',      // how long an unpaid bank-transfer order holds its slots
   opay_hold_minutes: '30',   // how long an unpaid OPay order holds its slots
   whatsapp: '', support_phone: '',
+  // Branding & customization (editable in Admin > Settings)
+  logo: '',                  // '' = built-in logo (public/img/logo.png)
+  favicon: '',               // '' = built-in favicon
+  show_name_with_logo: '1',
+  header_style: 'light',     // light | brand
+  primary_color: '#14532d',
+  accent_color: '#e8a317',
+  bg_color: '#f7f4ee',
+  hero_title: 'Buy in bulk together. Pay less. Share on the day.',
+  hero_text: 'Join other buyers in Owerri to buy a cow, a bag of rice, a keg of oil and more at bulk price. Pay for your share, then collect at the market on sharing day or have it delivered.',
+  announcement: '',
+  footer_text: 'Owerri, Imo State',
+  contact_email: '', address: '',
+  facebook: '', instagram: '', tiktok: '',
+  meta_description: 'Group bulk-buying in Owerri. Share a cow, rice, oil and more at bulk price.',
+  show_recent_joiners: '1',
+  show_reserved_count: '1',
+  button_label: 'Join this share',
 };
 const insSetting = db.prepare('INSERT OR IGNORE INTO settings(key, value) VALUES (?, ?)');
 for (const [k, v] of Object.entries(defaults)) insSetting.run(k, v);

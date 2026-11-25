@@ -4,15 +4,24 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><%= title ? title + ' · ' : '' %><%= settings.site_name %></title>
-<meta name="description" content="<%= settings.tagline %>">
+<meta name="description" content="<%= settings.meta_description || settings.tagline %>">
+<meta name="theme-color" content="<%= settings.primary_color %>">
+<% if (brand.fav.ico) { %><link rel="icon" href="<%= brand.fav.ico %>" sizes="any"><% } %>
+<link rel="icon" type="image/png" sizes="32x32" href="<%= brand.fav.png32 %>">
+<link rel="icon" type="image/png" sizes="192x192" href="<%= brand.fav.png192 %>">
+<link rel="apple-touch-icon" href="<%= brand.fav.apple %>">
+<meta property="og:title" content="<%= title ? title + ' · ' : '' %><%= settings.site_name %>">
+<meta property="og:description" content="<%= settings.meta_description || settings.tagline %>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/css/style.css">
+<style><%- themeCss %></style>
 </head>
 <body>
-<header class="top">
+<% if (!locals.layoutAdmin && settings.announcement) { %><div class="announce"><%= settings.announcement %></div><% } %>
+<header class="top <%= settings.header_style === 'brand' ? 'brand-style' : 'light' %>">
   <div class="wrap">
-    <a class="brand" href="<%= locals.layoutAdmin ? '/admin' : '/' %>"><span class="dot">B</span><%= settings.site_name %><%= locals.layoutAdmin ? ' · Admin' : '' %></a>
+    <a class="brand" href="<%= locals.layoutAdmin ? '/admin' : '/' %>"><img src="<%= brand.logo %>" alt="<%= settings.site_name %>"><% if (settings.show_name_with_logo === '1' || locals.layoutAdmin) { %><span><%= settings.site_name %><%= locals.layoutAdmin ? ' · Admin' : '' %></span><% } %></a>
     <nav>
       <% if (locals.layoutAdmin) { %>
         <a href="/admin" class="<%= path === '/' ? 'on' : '' %>">Dashboard</a>

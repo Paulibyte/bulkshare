@@ -19,7 +19,7 @@ Group bulk-buying for Owerri. The admin lists an item (for example a cow worth â
 - Orders: filter/search, view receipt, confirm paid, reject, cancel, mark refunded, re-check OPay
 - Participants list per item (share numbers, pickup vs delivery, "handed over" tick), print or download CSV for sharing day
 - Categories, delivery areas + fees, and sharing points/markets in Owerri
-- Settings: site name, bank details, reservation hold times, support phone/WhatsApp, change password
+- Settings & customization: upload logo (favicon is generated from it automatically, or upload a separate one), header style, main/accent/background colours with live preview, homepage headline and intro, announcement bar, card button text, Google/link-preview description, show/hide reserved count and recent joiners, reservation hold times, contact details, Facebook/Instagram/TikTok links, bank details, change password
 
 ## How the share counting works
 
@@ -55,7 +55,7 @@ Nginx server block (e.g. `share.bulktins.com`), then run certbot for HTTPS:
 ```nginx
 server {
   server_name share.bulktins.com;
-  client_max_body_size 6M;
+  client_max_body_size 12M;
   location / {
     proxy_pass http://127.0.0.1:3060;
     proxy_set_header Host $host;
