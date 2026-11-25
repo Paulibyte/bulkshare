@@ -1,0 +1,10 @@
+<% const back = locals.back || ''; %>
+<% if (['pending','awaiting_confirmation','expired'].includes(o.status)) { %>
+  <form class="inline" method="post" action="/admin/orders/<%= o.id %>/confirm" onsubmit="return confirm('Confirm you have received <%= naira(o.total) %> from <%= o.customer_name.replace(/'/g,'') %>?')"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="back" value="<%= back %>"><input type="hidden" name="note" value=""><button class="btn sm">Confirm paid</button></form>
+<% } %>
+<% if (['pending','awaiting_confirmation'].includes(o.status)) { %>
+  <form class="inline" method="post" action="/admin/orders/<%= o.id %>/reject" onsubmit="return confirm('Reject this payment and release the share?')"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="back" value="<%= back %>"><input type="hidden" name="note" value=""><button class="btn sm ghost">Reject</button></form>
+<% } %>
+<% if (o.status === 'refund_due') { %>
+  <form class="inline" method="post" action="/admin/orders/<%= o.id %>/refunded" onsubmit="return confirm('Mark as refunded?')"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="back" value="<%= back %>"><input type="hidden" name="note" value=""><button class="btn sm amber">Mark refunded</button></form>
+<% } %>

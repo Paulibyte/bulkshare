@@ -1,0 +1,39 @@
+<%- include('partials/header') %>
+<section class="hero">
+  <% if (activeCat) { %>
+    <h1><%= activeCat.name %></h1>
+  <% } else { %>
+    <h1><%= settings.tagline %></h1>
+    <p>Join other buyers in Owerri to buy a cow, a bag of rice, a keg of oil and more at bulk price. Pay for your share, then collect at the market on sharing day or have it delivered.</p>
+    <form class="search" action="/" method="get">
+      <input type="search" name="q" value="<%= q %>" placeholder="Search e.g. cow, rice, palm oil" aria-label="Search">
+      <button class="btn">Search</button>
+    </form>
+    <p class="small" style="margin-top:10px"><a href="/" class="<%= show==='current'?'':'muted' %>">Open now</a> · <a href="/?show=past" class="<%= show==='past'?'':'muted' %>">Completed shares</a></p>
+  <% } %>
+</section>
+<% if (!products.length) { %>
+  <div class="empty">No items here yet<%= q ? ' for "' + q + '"' : '' %>. Check back soon.</div>
+<% } else { %>
+<div class="grid">
+  <% products.forEach(p => { %>
+  <article class="card">
+    <a class="cover" href="/p/<%= p.slug %>">
+      <% if (p.image) { %><img src="/static/uploads/<%= p.image %>" alt="<%= p.title %>" loading="lazy"><% } else { %><span class="ph">🧺</span><% } %>
+      <span class="badge b-<%= p.status %>"><%= p.status === 'open' ? 'Open' : p.status === 'closed' ? 'Full — entry closed' : p.status %></span>
+    </a>
+    <div class="body">
+      <h3><a href="/p/<%= p.slug %>"><%= p.title %></a></h3>
+      <div class="price"><%= naira(p.slot_price) %> <small>per share · total <%= naira(p.total_price) %></small></div>
+      <%- include('partials/progress', { s: p.stats, total: p.total_slots }) %>
+      <div class="meta">
+        <span>📅 Sharing: <%= fmtDate(p.sharing_date) %></span>
+        <span>📍 <%= p.location_name || 'Location to be announced' %></span>
+      </div>
+      <a class="btn <%= p.status === 'open' ? '' : 'ghost' %> block" href="/p/<%= p.slug %>" style="margin-top:auto"><%= p.status === 'open' ? 'Join this share' : 'View details' %></a>
+    </div>
+  </article>
+  <% }) %>
+</div>
+<% } %>
+<%- include('partials/footer') %>

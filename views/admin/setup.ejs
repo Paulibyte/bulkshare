@@ -1,0 +1,51 @@
+<%- include('../partials/header') %>
+<h1>Categories &amp; places</h1>
+<div class="pgrid" style="grid-template-columns:1fr 1fr">
+<section class="panel">
+  <h2>Product categories</h2>
+  <% cats.forEach(c => { %>
+  <form method="post" action="/admin/setup/category" class="row" style="margin-bottom:8px">
+    <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="id" value="<%= c.id %>">
+    <input type="text" name="name" value="<%= c.name %>" style="flex:1"><input type="number" name="sort" value="<%= c.sort %>" style="width:70px" title="Order">
+    <button class="btn sm ghost">Save</button>
+    <button class="btn sm ghost" name="_delete" value="1" onclick="return confirm('Delete category? <%= c.n %> product(s) will have no category.')">✕</button>
+  </form>
+  <% }) %>
+  <form method="post" action="/admin/setup/category" class="row" style="margin-top:14px">
+    <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="text" name="name" placeholder="New category" style="flex:1" required><input type="number" name="sort" value="0" style="width:70px"><button class="btn sm">Add</button>
+  </form>
+</section>
+<section class="panel">
+  <h2>Delivery areas &amp; fees</h2>
+  <% areas.forEach(a => { %>
+  <form method="post" action="/admin/setup/area" class="row" style="margin-bottom:8px">
+    <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="id" value="<%= a.id %>">
+    <input type="text" name="name" value="<%= a.name %>" style="flex:1"><input type="number" name="fee" value="<%= a.fee %>" style="width:110px" title="Fee (₦)">
+    <button class="btn sm ghost">Save</button><button class="btn sm ghost" name="_delete" value="1" onclick="return confirm('Delete area?')">✕</button>
+  </form>
+  <% }) %>
+  <form method="post" action="/admin/setup/area" class="row" style="margin-top:14px">
+    <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="text" name="name" placeholder="New area e.g. Ikenegbu" style="flex:1" required><input type="number" name="fee" placeholder="Fee ₦" style="width:110px" required><button class="btn sm">Add</button>
+  </form>
+</section>
+</div>
+<section class="panel" style="margin-bottom:30px">
+  <h2>Sharing points / markets in Owerri</h2>
+  <% locs.forEach(l => { %>
+  <form method="post" action="/admin/setup/location" class="row" style="margin-bottom:8px">
+    <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="id" value="<%= l.id %>">
+    <input type="text" name="name" value="<%= l.name %>" style="flex:1;min-width:160px" placeholder="Name">
+    <input type="text" name="address" value="<%= l.address %>" style="flex:1.4;min-width:200px" placeholder="Address">
+    <input type="text" name="notes" value="<%= l.notes || '' %>" style="flex:1.4;min-width:200px" placeholder="Directions / landmark (optional)">
+    <button class="btn sm ghost">Save</button><button class="btn sm ghost" name="_delete" value="1" onclick="return confirm('Delete location? <%= l.n %> product(s) will show TBA.')">✕</button>
+  </form>
+  <% }) %>
+  <form method="post" action="/admin/setup/location" class="row" style="margin-top:14px">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <input type="text" name="name" placeholder="New market / point" style="flex:1;min-width:160px" required>
+    <input type="text" name="address" placeholder="Address" style="flex:1.4;min-width:200px">
+    <input type="text" name="notes" placeholder="Directions (optional)" style="flex:1.4;min-width:200px">
+    <button class="btn sm">Add</button>
+  </form>
+</section>
+<%- include('../partials/footer') %>

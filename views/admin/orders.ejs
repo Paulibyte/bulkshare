@@ -1,0 +1,25 @@
+<%- include('../partials/header') %>
+<h1>Orders</h1>
+<form class="row" method="get" style="margin-bottom:14px">
+  <select name="status" style="max-width:230px"><option value="">All statuses</option><% statuses.forEach(s => { %><option value="<%= s %>" <%= st === s ? 'selected' : '' %>><%= s.replace('_',' ') %></option><% }) %></select>
+  <input type="search" name="q" value="<%= q %>" placeholder="Ref, name or phone" style="max-width:260px">
+  <button class="btn sm">Filter</button>
+</form>
+<% if (!orders.length) { %><div class="empty">No orders found.</div><% } else { %>
+<div class="tablewrap"><table>
+  <tr><th>Ref</th><th>Date</th><th>Customer</th><th>Item</th><th>Total</th><th>Method</th><th>Status</th><th></th></tr>
+  <% orders.forEach(o => { %>
+  <tr>
+    <td><a href="/admin/orders/<%= o.id %>"><%= o.code %></a></td>
+    <td class="small"><%= fmtUtc(o.created_at) %></td>
+    <td><%= o.customer_name %><br><span class="tiny muted"><%= o.phone %></span></td>
+    <td class="small"><%= o.title %> · <%= o.slots %></td>
+    <td><%= naira(o.total) %></td>
+    <td class="small"><%= o.payment_method === 'opay' ? 'OPay' : 'Bank' %></td>
+    <td><span class="badge b-<%= o.status %>"><%= o.status.replace('_',' ') %></span></td>
+    <td><%- include('_orderactions', { o, back: '/admin/orders' + (st ? '?status=' + st : '') }) %></td>
+  </tr>
+  <% }) %>
+</table></div>
+<% } %>
+<%- include('../partials/footer') %>

@@ -1,0 +1,44 @@
+<%- include('../partials/header') %>
+<h1><%= title %></h1>
+<form class="panel" method="post" action="/admin/products<%= p.id ? '/' + p.id : '' %>" enctype="multipart/form-data" style="max-width:820px">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <label for="t">Item name</label>
+  <input type="text" id="t" name="title" value="<%= p.title || '' %>" placeholder="e.g. Big White Fulani Cow" required>
+  <div class="two">
+    <div><label for="c">Category</label>
+      <select id="c" name="category_id"><option value="">— none —</option><% cats.forEach(c => { %><option value="<%= c.id %>" <%= p.category_id == c.id ? 'selected' : '' %>><%= c.name %></option><% }) %></select></div>
+    <div><label for="st">Visibility</label>
+      <% if (['closed','completed','cancelled'].includes(p.status)) { %><input type="text" value="<%= p.status %> (change from the products list)" disabled><% } else { %>
+      <select id="st" name="status"><option value="open" <%= p.status === 'open' ? 'selected' : '' %>>Open — customers can join</option><option value="draft" <%= p.status === 'draft' ? 'selected' : '' %>>Draft — hidden</option></select><% } %></div>
+  </div>
+  <div class="two">
+    <div><label for="tp">Total price (₦)</label><input type="number" id="tp" name="total_price" min="100" value="<%= p.total_price || '' %>" placeholder="1500000" required></div>
+    <div><label for="ts">Number of customers / shares</label><input type="number" id="ts" name="total_slots" min="<%= Math.max(2, sold) %>" value="<%= p.total_slots || '' %>" placeholder="30" required>
+      <% if (sold) { %><span class="tiny muted"><%= sold %> already paid or reserved</span><% } %></div>
+  </div>
+  <div class="totalbox"><span>Each share costs</span><span id="each">—</span></div>
+  <div class="two">
+    <div><label for="mx">Max shares one customer can take</label><input type="number" id="mx" name="max_slots_per_customer" min="1" value="<%= p.max_slots_per_customer || 1 %>"></div>
+    <div><label for="sd">Sharing date &amp; time</label><input type="datetime-local" id="sd" name="sharing_date" value="<%= p.sharing_date || '' %>"></div>
+  </div>
+  <label for="loc">Sharing point / market</label>
+  <select id="loc" name="location_id"><option value="">— to be announced —</option><% locs.forEach(l => { %><option value="<%= l.id %>" <%= p.location_id == l.id ? 'selected' : '' %>><%= l.name %><%= l.address ? ' — ' + l.address : '' %></option><% }) %></select>
+  <span class="tiny muted">Add markets in <a href="/admin/setup">Categories &amp; places</a>.</span>
+  <label>Options for customers</label>
+  <div class="row">
+    <label class="opt" style="flex:1"><input type="checkbox" name="allow_pickup" value="1" <%= p.allow_pickup ? 'checked' : '' %>><span>Collect at sharing point</span></label>
+    <label class="opt" style="flex:1"><input type="checkbox" name="allow_delivery" value="1" <%= p.allow_delivery ? 'checked' : '' %>><span>Delivery to customer</span></label>
+  </div>
+  <label for="d">Description</label>
+  <textarea id="d" name="description" rows="5" placeholder="Weight, breed, what each share gets, sharing arrangement..."><%= p.description || '' %></textarea>
+  <label for="im">Photo <span class="muted small">(JPG/PNG/WebP, max 5MB<%= p.image ? ', leave empty to keep current' : '' %>)</span></label>
+  <% if (p.image) { %><img src="/static/uploads/<%= p.image %>" alt="" style="max-width:200px;border-radius:10px;margin-bottom:8px"><% } %>
+  <input type="file" id="im" name="image" accept="image/jpeg,image/png,image/webp">
+  <div class="row" style="margin-top:20px"><button class="btn">Save product</button><a class="btn ghost" href="/admin/products">Cancel</a></div>
+</form>
+<script>
+const tp = document.getElementById('tp'), ts = document.getElementById('ts'), each = document.getElementById('each');
+function u(){ const a = +tp.value, b = +ts.value; each.textContent = a && b ? '₦' + Math.ceil(a / b).toLocaleString('en-NG') + (a % b ? ' (rounded up)' : '') : '—'; }
+tp.oninput = ts.oninput = u; u();
+</script>
+<%- include('../partials/footer') %>

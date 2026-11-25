@@ -1,0 +1,41 @@
+<%- include('../partials/header') %>
+<div class="row"><h1 style="margin:0">Order <%= o.code %></h1><span class="badge b-<%= o.status %>"><%= o.status.replace('_',' ') %></span></div>
+<div class="pgrid" style="margin-top:16px">
+  <div class="panel">
+    <dl class="facts">
+      <dt>Item</dt><dd><a href="/p/<%= o.slug %>" target="_blank"><%= o.title %></a></dd>
+      <dt>Shares</dt><dd><%= o.slots %> × <%= naira(o.slot_price) %><%= o.slot_from ? ' (share #' + o.slot_from + (o.slot_to !== o.slot_from ? '–' + o.slot_to : '') + ')' : '' %></dd>
+      <dt>Delivery fee</dt><dd><%= naira(o.delivery_fee) %></dd>
+      <dt>Total</dt><dd><%= naira(o.total) %></dd>
+      <dt>Customer</dt><dd><%= o.customer_name %></dd>
+      <dt>Phone</dt><dd><a href="tel:<%= o.phone %>"><%= o.phone %></a> · <a target="_blank" href="https://wa.me/<%= o.phone.replace(/^0/, '234').replace(/\D/g,'') %>">WhatsApp</a></dd>
+      <dt>Email</dt><dd><%= o.email || '—' %></dd>
+      <dt>Get it by</dt><dd><%= o.fulfillment === 'pickup' ? 'Collect at sharing point' : 'Delivery — ' + o.delivery_area %><% if (o.delivery_address) { %><br><span class="muted small"><%= o.delivery_address %></span><% } %></dd>
+      <dt>Method</dt><dd><%= o.payment_method === 'opay' ? 'OPay' : 'Bank transfer' %></dd>
+      <% if (o.payment_method === 'opay') { %><dt>OPay</dt><dd><%= o.opay_status || 'not started' %> <%= o.opay_order_no ? '· ' + o.opay_order_no : '' %></dd><% } %>
+      <dt>Created</dt><dd><%= fmtUtc(o.created_at) %></dd>
+      <% if (o.expires_at && o.status === 'pending') { %><dt>Hold until</dt><dd><%= fmtUtc(o.expires_at) %></dd><% } %>
+      <% if (o.paid_at) { %><dt>Paid</dt><dd><%= fmtUtc(o.paid_at) %></dd><% } %>
+      <% if (o.admin_note) { %><dt>Notes</dt><dd style="font-weight:400"><%= o.admin_note %></dd><% } %>
+    </dl>
+  </div>
+  <div class="panel">
+    <h2>Payment</h2>
+    <% if (o.transfer_sender) { %><p>Paid from: <b><%= o.transfer_sender %></b></p><% } %>
+    <% if (o.transfer_note) { %><p class="small">Customer note: <%= o.transfer_note %></p><% } %>
+    <% if (o.transfer_proof) { %>
+      <% if (/\.pdf$/.test(o.transfer_proof)) { %><a class="btn ghost" target="_blank" href="/admin/proof/<%= o.transfer_proof %>">Open receipt (PDF)</a>
+      <% } else { %><a target="_blank" href="/admin/proof/<%= o.transfer_proof %>"><img src="/admin/proof/<%= o.transfer_proof %>" alt="Receipt" style="max-height:360px;border-radius:10px;border:1px solid var(--line)"></a><% } %>
+    <% } else if (o.payment_method === 'bank') { %><p class="muted">No receipt uploaded. Check your bank app for narration <b><%= o.code %></b>.</p><% } %>
+    <label for="note">Note for this action <span class="muted small">(optional)</span></label>
+    <input type="text" id="note" placeholder="e.g. seen in GTBank 3:12pm" oninput="document.querySelectorAll('input[name=note]').forEach(i=>i.value=this.value)">
+    <div class="row" style="margin-top:12px">
+      <%- include('_orderactions', { o, back: '' }) %>
+      <% if (o.payment_method === 'opay' && opayEnabled) { %><form class="inline" method="post" action="/admin/orders/<%= o.id %>/verify-opay"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm ghost">Check with OPay</button></form><% } %>
+      <% if (!['cancelled','refunded','refund_due','rejected'].includes(o.status)) { %>
+      <form class="inline" method="post" action="/admin/orders/<%= o.id %>/cancel" onsubmit="return confirm('<%= o.status === 'paid' ? 'Cancel this PAID order? It will be marked refund due and the share released.' : 'Cancel this order?' %>')"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="note" value=""><button class="btn sm red">Cancel order</button></form>
+      <% } %>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

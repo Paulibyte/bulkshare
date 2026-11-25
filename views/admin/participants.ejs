@@ -1,0 +1,25 @@
+<%- include('../partials/header') %>
+<div class="row"><h1 style="margin:0"><%= p.title %></h1><span class="badge b-<%= p.status %>"><%= p.status %></span><span class="spacer"></span>
+  <a class="btn sm ghost noprint" href="?format=csv">Download CSV</a><button class="btn sm ghost noprint" onclick="print()">Print list</button></div>
+<p class="muted">Sharing: <%= fmtDate(p.sharing_date) %> · <%= p.location_name || 'location TBA' %> · <%= naira(p.slot_price) %> per share</p>
+<div style="max-width:520px"><%- include('../partials/progress', { s: p.stats, total: p.total_slots }) %></div>
+<% const paid = orders.filter(o => o.status === 'paid'); const pick = paid.filter(o => o.fulfillment === 'pickup'), del = paid.filter(o => o.fulfillment === 'delivery'); %>
+<p class="small"><b><%= paid.length %></b> paid customers · <b><%= pick.reduce((a,o)=>a+o.slots,0) %></b> shares for collection · <b><%= del.reduce((a,o)=>a+o.slots,0) %></b> shares for delivery</p>
+<% if (!orders.length) { %><div class="empty">No one has joined yet.</div><% } else { %>
+<div class="tablewrap" style="margin-top:12px"><table>
+  <tr><th>Share #</th><th>Customer</th><th>Qty</th><th>Get it by</th><th>Status</th><th>Handed over</th></tr>
+  <% orders.forEach(o => { %>
+  <tr>
+    <td><b><%= o.slot_from ? (o.slot_from === o.slot_to ? '#' + o.slot_from : '#' + o.slot_from + '–' + o.slot_to) : '—' %></b></td>
+    <td><a href="/admin/orders/<%= o.id %>"><%= o.customer_name %></a><br><span class="tiny muted"><%= o.phone %> · <%= o.code %></span></td>
+    <td><%= o.slots %></td>
+    <td class="small"><%= o.fulfillment === 'pickup' ? 'Collect' : 'Delivery: ' + o.delivery_area %><% if (o.delivery_address) { %><br><span class="muted"><%= o.delivery_address %></span><% } %></td>
+    <td><span class="badge b-<%= o.status %>"><%= o.status.replace('_',' ') %></span></td>
+    <td><% if (o.status === 'paid') { %>
+      <form class="inline" method="post" action="/admin/orders/<%= o.id %>/handover"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="back" value="/admin/products/<%= p.id %>/participants"><button class="btn sm <%= o.handed_over ? '' : 'ghost' %>"><%= o.handed_over ? '✓ Done' : 'Mark done' %></button></form>
+    <% } %></td>
+  </tr>
+  <% }) %>
+</table></div>
+<% } %>
+<%- include('../partials/footer') %>

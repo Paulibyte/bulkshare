@@ -1,0 +1,30 @@
+<%- include('../partials/header') %>
+<div class="row"><h1 style="margin:0">Products</h1><span class="spacer"></span><a class="btn" href="/admin/products/new">+ New product</a></div>
+<p class="row small" style="margin:14px 0">
+  <% ['', 'draft', 'open', 'closed', 'completed', 'cancelled'].forEach(s => { %><a class="chip <%= st === s ? 'on' : '' %>" href="/admin/products<%= s ? '?status=' + s : '' %>"><%= s || 'All' %></a><% }) %>
+</p>
+<% if (!products.length) { %><div class="empty">No products.</div><% } else { %>
+<div class="tablewrap"><table>
+  <tr><th>Item</th><th>Category</th><th style="min-width:190px">Progress</th><th>Status</th><th>Actions</th></tr>
+  <% products.forEach(p => { %>
+  <tr>
+    <td><b><%= p.title %></b><br><span class="tiny muted"><%= naira(p.total_price) %> ÷ <%= p.total_slots %> = <%= naira(p.slot_price) %>/share</span></td>
+    <td class="small"><%= p.category_name || '—' %></td>
+    <td><%- include('../partials/progress', { s: p.stats, total: p.total_slots }) %></td>
+    <td><span class="badge b-<%= p.status %>"><%= p.status %></span></td>
+    <td>
+      <div class="row" style="gap:6px">
+      <a class="btn sm ghost" href="/admin/products/<%= p.id %>/edit">Edit</a>
+      <a class="btn sm ghost" href="/admin/products/<%= p.id %>/participants">Participants</a>
+      <% if (p.status !== 'draft') { %><a class="btn sm ghost" href="/p/<%= p.slug %>" target="_blank">View</a><% } %>
+      <% const next = { draft: [['open','Publish']], open: [['closed','Close entry'],['draft','Unpublish'],['cancelled','Cancel']], closed: [['completed','Mark shared'],['open','Reopen'],['cancelled','Cancel']], completed: [['closed','Undo shared']] }[p.status] || []; %>
+      <% next.forEach(([to, label]) => { %>
+        <form class="inline" method="post" action="/admin/products/<%= p.id %>/status" <% if (to === 'cancelled') { %>onsubmit="return confirm('Cancel this item? Paid orders will be marked for refund. This cannot be undone.')"<% } %>><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="status" value="<%= to %>"><button class="btn sm <%= to === 'cancelled' ? 'red' : 'ghost' %>"><%= label %></button></form>
+      <% }) %>
+      </div>
+    </td>
+  </tr>
+  <% }) %>
+</table></div>
+<% } %>
+<%- include('../partials/footer') %>

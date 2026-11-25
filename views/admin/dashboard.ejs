@@ -1,0 +1,45 @@
+<%- include('../partials/header') %>
+<div class="row"><h1 style="margin:0">Dashboard</h1><span class="spacer"></span><a class="btn" href="/admin/products/new">+ New product</a></div>
+<div class="stats">
+  <div class="stat"><b><%= counts.awaiting %></b><span>transfers to confirm</span></div>
+  <div class="stat"><b><%= counts.pending %></b><span>reservations awaiting payment</span></div>
+  <div class="stat"><b><%= counts.refund %></b><span>refunds due</span></div>
+  <div class="stat"><b><%= naira(revenue) %></b><span>confirmed payments (<%= counts.paid %> orders)</span></div>
+</div>
+<% if (!settings.account_number) { %><div class="alert error">Add your bank account details in <a href="/admin/settings">Settings</a> so customers can pay by transfer.</div><% } %>
+<% if (!opayEnabled) { %><div class="alert info">OPay is off. Add OPAY_MERCHANT_ID, OPAY_PUBLIC_KEY and OPAY_SECRET_KEY to the .env file to turn it on.</div><% } %>
+
+<h2 style="margin-top:24px">Needs your attention</h2>
+<% if (!toConfirm.length) { %><div class="empty">Nothing to confirm right now.</div><% } else { %>
+<div class="tablewrap"><table>
+  <tr><th>Ref</th><th>Customer</th><th>Item</th><th>Amount</th><th>Paid from</th><th>Status</th><th></th></tr>
+  <% toConfirm.forEach(o => { %>
+  <tr>
+    <td><a href="/admin/orders/<%= o.id %>"><%= o.code %></a></td>
+    <td><%= o.customer_name %><br><span class="tiny muted"><%= o.phone %></span></td>
+    <td><%= o.title %><br><span class="tiny muted"><%= o.slots %> share(s)</span></td>
+    <td><%= naira(o.total) %></td>
+    <td><%= o.transfer_sender || '—' %><% if (o.transfer_proof) { %><br><a class="tiny" target="_blank" href="/admin/proof/<%= o.transfer_proof %>">View receipt</a><% } %></td>
+    <td><span class="badge b-<%= o.status %>"><%= o.status.replace('_',' ') %></span></td>
+    <td><%- include('_orderactions', { o, back: '/admin' }) %></td>
+  </tr>
+  <% }) %>
+</table></div>
+<% } %>
+
+<h2 style="margin-top:28px">Open &amp; full items</h2>
+<% if (!products.length) { %><div class="empty">No items yet. <a href="/admin/products/new">Create your first one</a>.</div><% } else { %>
+<div class="tablewrap"><table>
+  <tr><th>Item</th><th style="min-width:200px">Progress</th><th>Sharing</th><th>Status</th><th></th></tr>
+  <% products.forEach(p => { %>
+  <tr>
+    <td><b><%= p.title %></b><br><span class="tiny muted"><%= naira(p.slot_price) %> × <%= p.total_slots %></span></td>
+    <td><%- include('../partials/progress', { s: p.stats, total: p.total_slots }) %></td>
+    <td class="small"><%= fmtDate(p.sharing_date) %><br><span class="muted"><%= p.location_name || '' %></span></td>
+    <td><span class="badge b-<%= p.status %>"><%= p.status %></span></td>
+    <td><a class="btn sm ghost" href="/admin/products/<%= p.id %>/participants">Participants</a></td>
+  </tr>
+  <% }) %>
+</table></div>
+<% } %>
+<%- include('../partials/footer') %>

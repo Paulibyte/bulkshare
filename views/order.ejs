@@ -1,0 +1,97 @@
+<%- include('partials/header') %>
+<% const tk = `<input type="hidden" name="_csrf" value="${csrf}"><input type="hidden" name="t" value="${o.token}">`;
+   const labels = { pending: 'Awaiting payment', awaiting_confirmation: 'Confirming payment', paid: 'Paid', rejected: 'Payment not found', expired: 'Reservation expired', cancelled: 'Cancelled', refund_due: 'Refund in progress', refunded: 'Refunded' }; %>
+<div class="pgrid">
+  <div class="panel">
+    <div class="row"><h1 style="margin:0">Order <%= o.code %></h1><span class="badge b-<%= o.status %>"><%= labels[o.status] || o.status %></span></div>
+    <p class="muted small">Keep this page link or your reference <b><%= o.code %></b> and phone number to check your order later.</p>
+
+    <% if (o.status === 'pending' && o.payment_method === 'bank') { %>
+      <h2>Pay by bank transfer</h2>
+      <% if (settings.account_number) { %>
+      <div class="bankbox">
+        <div class="small muted">Transfer exactly</div>
+        <div class="acct"><%= naira(o.total) %> <button type="button" class="copy" data-copy="<%= o.total %>">Copy</button></div>
+        <div style="margin-top:10px"><span class="small muted">Bank</span><br><b><%= settings.bank_name %></b></div>
+        <div style="margin-top:6px"><span class="small muted">Account number</span><br><span class="acct"><%= settings.account_number %></span> <button type="button" class="copy" data-copy="<%= settings.account_number %>">Copy</button></div>
+        <div style="margin-top:6px"><span class="small muted">Account name</span><br><b><%= settings.account_name %></b></div>
+        <div style="margin-top:10px"><span class="small muted">Use this as your transfer narration/description</span><br><b><%= o.code %></b> <button type="button" class="copy" data-copy="<%= o.code %>">Copy</button></div>
+      </div>
+      <% } else { %><div class="alert error">Bank details have not been set up yet. Please contact us before paying.</div><% } %>
+      <p class="small">Your share is held until <b><%= fmtUtc(o.expires_at) %></b>. After you transfer, tell us below so we can confirm it.</p>
+      <form method="post" action="/order/<%= o.code %>/proof?t=<%= o.token %>" enctype="multipart/form-data">
+        <%- tk %>
+        <label for="ts">Name on the account you paid from</label>
+        <input type="text" id="ts" name="transfer_sender" required>
+        <label for="pf">Receipt / screenshot <span class="muted small">(JPG, PNG or PDF, max 5MB)</span></label>
+        <input type="file" id="pf" name="proof" accept="image/jpeg,image/png,image/webp,application/pdf">
+        <label for="tn">Note <span class="muted small">(optional)</span></label>
+        <input type="text" id="tn" name="transfer_note" placeholder="e.g. paid from Moniepoint at 3:10pm">
+        <button class="btn block" style="margin-top:14px">I have paid</button>
+      </form>
+    <% } else if (o.status === 'pending' && o.payment_method === 'opay') { %>
+      <h2>Pay with OPay</h2>
+      <p>You will be taken to OPay's secure checkout to pay <b><%= naira(o.total) %></b> by card, bank transfer, USSD or OPay wallet. Your share is held until <b><%= fmtUtc(o.expires_at) %></b>.</p>
+      <form method="post" action="/order/<%= o.code %>/opay"><%- tk %><button class="btn amber block">Pay <%= naira(o.total) %> with OPay</button></form>
+      <% if (o.opay_status) { %><p class="small muted">OPay status: <%= o.opay_status %></p><% } %>
+      <% if (!o.opay_url) { %>
+      <form method="post" action="/order/<%= o.code %>/switch-bank" style="margin-top:10px"><%- tk %><button class="btn ghost block">Pay by bank transfer instead</button></form>
+      <% } %>
+    <% } else if (o.status === 'awaiting_confirmation') { %>
+      <div class="alert info">We received your transfer details and are confirming the payment. Your share stays reserved for you. This page will show "Paid" once confirmed.</div>
+    <% } else if (o.status === 'paid') { %>
+      <div class="alert success">Payment confirmed. Welcome aboard! 🎉</div>
+      <div class="bankbox">
+        <div class="small muted">Your share number<%= o.slots > 1 ? 's' : '' %></div>
+        <div class="acct">#<%= o.slot_from %><%= o.slot_to !== o.slot_from ? ' – #' + o.slot_to : '' %></div>
+        <p class="small" style="margin-bottom:0">Show this page or your reference <b><%= o.code %></b> <%= o.fulfillment === 'pickup' ? 'at the sharing point' : 'when your delivery arrives' %>.</p>
+      </div>
+      <button class="btn ghost noprint" onclick="window.print()">Print receipt</button>
+    <% } else if (o.status === 'expired') { %>
+      <div class="alert error">This reservation expired before payment was confirmed, so the share was released to others.</div>
+      <% if (o.payment_method === 'bank') { %>
+        <p class="small">Already transferred? Send your details and we will check. If the item is full by then, we will refund you.</p>
+        <form method="post" action="/order/<%= o.code %>/proof?t=<%= o.token %>" enctype="multipart/form-data">
+          <%- tk %>
+          <label for="ts">Name on the account you paid from</label><input type="text" id="ts" name="transfer_sender" required>
+          <label for="pf">Receipt / screenshot</label><input type="file" id="pf" name="proof" accept="image/jpeg,image/png,image/webp,application/pdf">
+          <button class="btn block" style="margin-top:14px">Send payment details</button>
+        </form>
+      <% } %>
+      <a class="btn ghost" style="margin-top:12px" href="/p/<%= o.slug %>">Back to the item</a>
+    <% } else if (o.status === 'refund_due') { %>
+      <div class="alert info">Your payment was received, but this share could not be completed (the item filled up or was cancelled). We are processing your refund of <%= naira(o.total) %>.</div>
+    <% } else if (o.status === 'refunded') { %>
+      <div class="alert info">Your refund has been sent.</div>
+    <% } else if (o.status === 'rejected') { %>
+      <div class="alert error">We could not find your payment. If you did pay, please contact us with your receipt and reference <%= o.code %>.</div>
+    <% } else { %>
+      <div class="alert info">This order was cancelled.</div>
+    <% } %>
+
+    <% if (o.status === 'pending') { %>
+      <form method="post" action="/order/<%= o.code %>/cancel" style="margin-top:16px" onsubmit="return confirm('Cancel this reservation and release your share?')"><%- tk %><button class="btn ghost sm">Cancel reservation</button></form>
+    <% } %>
+  </div>
+
+  <aside class="panel">
+    <h2><%= o.title %></h2>
+    <dl class="facts">
+      <dt>Shares</dt><dd><%= o.slots %> × <%= naira(o.slot_price) %></dd>
+      <% if (o.delivery_fee) { %><dt>Delivery</dt><dd><%= naira(o.delivery_fee) %></dd><% } %>
+      <dt>Total</dt><dd><%= naira(o.total) %></dd>
+      <dt>Name</dt><dd><%= o.customer_name %></dd>
+      <dt>Phone</dt><dd><%= o.phone %></dd>
+      <dt>Payment</dt><dd><%= o.payment_method === 'opay' ? 'OPay' : 'Bank transfer' %></dd>
+      <% if (o.fulfillment === 'pickup') { %>
+        <dt>Collect at</dt><dd><%= o.location_name || 'To be announced' %><% if (o.location_address) { %><br><span class="small muted" style="font-weight:400"><%= o.location_address %></span><% } %></dd>
+        <dt>Sharing day</dt><dd><%= fmtDate(o.sharing_date) %></dd>
+      <% } else { %>
+        <dt>Deliver to</dt><dd><%= o.delivery_area %><br><span class="small muted" style="font-weight:400"><%= o.delivery_address %></span></dd>
+        <dt>Delivery after</dt><dd><%= fmtDate(o.sharing_date) %></dd>
+      <% } %>
+    </dl>
+    <a href="/p/<%= o.slug %>" class="small">View item and progress →</a>
+  </aside>
+</div>
+<%- include('partials/footer') %>

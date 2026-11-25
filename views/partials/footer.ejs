@@ -1,0 +1,15 @@
+</div>
+</main>
+<footer class="foot"><div class="wrap row">
+  <span>© <%= new Date().getFullYear() %> <%= settings.site_name %> · Owerri, Imo State</span>
+  <span class="spacer"></span>
+  <% if (settings.support_phone) { %><span>Call: <a href="tel:<%= settings.support_phone %>"><%= settings.support_phone %></a></span><% } %>
+  <% if (settings.whatsapp) { %><a href="https://wa.me/<%= settings.whatsapp.replace(/\D/g,'') %>" target="_blank" rel="noopener">WhatsApp us</a><% } %>
+</div></footer>
+<script>
+document.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', () => {
+  navigator.clipboard && navigator.clipboard.writeText(b.dataset.copy).then(() => { const t = b.textContent; b.textContent = 'Copied'; setTimeout(() => b.textContent = t, 1200); });
+}));
+</script>
+</body>
+</html>

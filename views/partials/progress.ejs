@@ -1,0 +1,4 @@
+<div class="progress" title="<%= s.paid %> paid, <%= s.held %> reserved, <%= s.remaining %> open">
+  <div class="paid" style="width:<%= s.percent %>%"></div><div class="held" style="width:<%= s.heldPercent %>%"></div>
+</div>
+<div class="counts"><span><b><%= s.paid %></b> of <%= total %> paid<% if (s.held) { %> · <%= s.held %> reserved<% } %></span><span><b><%= s.remaining %></b> left</span></div>
