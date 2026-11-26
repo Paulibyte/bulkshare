@@ -9,6 +9,9 @@ const opay = require('./lib/opay');
 const brand = require('./lib/brand');
 
 const app = express();
+const fs = require('fs');
+// Cache-busting: changes whenever style.css changes, so browsers fetch the new file after each update
+const assetVersion = fs.statSync(path.join(__dirname, 'public', 'css', 'style.css')).mtimeMs.toString(36);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.set('trust proxy', 1); // behind Nginx on the VPS
@@ -42,6 +45,7 @@ app.use((req, res, next) => {
   res.locals.csrf = req.session.csrf;
   const settings = getSettings();
   res.locals.settings = settings;
+  res.locals.assetVersion = assetVersion;
   res.locals.brand = brand.assets(settings);
   res.locals.themeCss = brand.themeCss(settings);
   res.locals.naira = naira;

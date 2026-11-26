@@ -14,14 +14,14 @@
 <meta property="og:description" content="<%= settings.meta_description || settings.tagline %>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/css/style.css">
+<link rel="stylesheet" href="/static/css/style.css?v=<%= assetVersion %>">
 <style><%- themeCss %></style>
 </head>
 <body>
 <% if (!locals.layoutAdmin && settings.announcement) { %><div class="announce"><%= settings.announcement %></div><% } %>
 <header class="top <%= settings.header_style === 'brand' ? 'brand-style' : 'light' %>">
   <div class="wrap">
-    <a class="brand" href="<%= locals.layoutAdmin ? '/admin' : '/' %>"><img src="<%= brand.logo %>" alt="<%= settings.site_name %>"><% if (settings.show_name_with_logo === '1' || locals.layoutAdmin) { %><span><%= settings.site_name %><%= locals.layoutAdmin ? ' · Admin' : '' %></span><% } %></a>
+    <a class="brand" href="<%= locals.layoutAdmin ? '/admin' : '/' %>"><img src="<%= brand.logo %>" alt="<%= settings.site_name %>" height="46" style="height:46px;width:auto;max-width:180px"><% if (settings.show_name_with_logo === '1' || locals.layoutAdmin) { %><span><%= settings.site_name %><%= locals.layoutAdmin ? ' · Admin' : '' %></span><% } %></a>
     <nav>
       <% if (locals.layoutAdmin) { %>
         <a href="/admin" class="<%= path === '/' ? 'on' : '' %>">Dashboard</a>

@@ -21,7 +21,7 @@ h2{font-size:1.35rem}
 .top{background:var(--green);color:#fff}
 .top .wrap{display:flex;align-items:center;gap:16px;min-height:62px;flex-wrap:wrap;padding-top:8px;padding-bottom:8px}
 .brand{color:#fff;text-decoration:none;font-weight:800;font-size:1.15rem;display:flex;align-items:center;gap:8px}
-.brand img{height:46px;width:auto}
+.brand img{height:46px;width:auto;max-width:180px;object-fit:contain;flex-shrink:0}
 .top.brand-style .brand img{background:#fff;border-radius:10px;padding:3px 6px}
 .top.light{background:#fff;color:var(--ink);border-bottom:1px solid var(--line)}
 .top.light .brand{color:var(--green)}
