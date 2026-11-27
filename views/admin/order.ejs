@@ -4,7 +4,8 @@
   <div class="panel">
     <dl class="facts">
       <dt>Item</dt><dd><a href="/p/<%= o.slug %>" target="_blank"><%= o.title %></a></dd>
-      <dt>Shares</dt><dd><%= o.slots %> × <%= naira(o.slot_price) %><%= o.slot_from ? ' (share #' + o.slot_from + (o.slot_to !== o.slot_from ? '–' + o.slot_to : '') + ')' : '' %></dd>
+      <dt>Type</dt><dd><%= o.purchase_type === 'whole' ? 'Single buyer — whole item' : o.purchase_type === 'remaining' ? 'Single buyer — all remaining shares' : 'Shares' %></dd>
+      <dt>Shares</dt><dd><%= o.slots %><%= o.purchase_type === 'share' ? ' × ' + naira(o.slot_price) : ' for ' + naira(o.total - o.delivery_fee) %><%= o.slot_from ? ' (share #' + o.slot_from + (o.slot_to !== o.slot_from ? '–' + o.slot_to : '') + ')' : '' %></dd>
       <dt>Delivery fee</dt><dd><%= naira(o.delivery_fee) %></dd>
       <dt>Total</dt><dd><%= naira(o.total) %></dd>
       <dt>Customer</dt><dd><%= o.customer_name %></dd>

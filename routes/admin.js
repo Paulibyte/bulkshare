@@ -65,7 +65,7 @@ router.get('/products', (req, res) => {
   res.render('admin/products', { title: 'Products', products: pools.withStats(rows), st });
 });
 
-router.get('/products/new', (req, res) => res.render('admin/product-form', { title: 'New product', p: { max_slots_per_customer: 1, allow_pickup: 1, allow_delivery: 1, status: 'open' }, ...productLists(), sold: 0 }));
+router.get('/products/new', (req, res) => res.render('admin/product-form', { title: 'New product', p: { max_slots_per_customer: 1, allow_pickup: 1, allow_delivery: 1, allow_whole: 1, status: 'open' }, ...productLists(), sold: 0 }));
 
 router.get('/products/:id/edit', (req, res, next) => {
   const p = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
@@ -91,9 +91,13 @@ function readProduct(req, existing) {
     max_slots_per_customer: Math.max(1, parseInt(b.max_slots_per_customer, 10) || 1),
     sharing_date: b.sharing_date || null,
     allow_pickup: b.allow_pickup ? 1 : 0, allow_delivery: b.allow_delivery ? 1 : 0,
+    allow_whole: b.allow_whole ? 1 : 0,
+    whole_price: parseInt(String(b.whole_price || '').replace(/[^\d]/g, ''), 10) || null,
     status: ['draft', 'open'].includes(b.status) ? b.status : (existing ? existing.status : 'open'),
   };
   if (!p.allow_pickup && !p.allow_delivery) errors.push('Allow pickup, delivery, or both.');
+  if (p.whole_price && p.whole_price < 100) errors.push('Enter a valid single-buyer price, or leave it empty.');
+  if (!p.allow_whole) p.whole_price = null;
   if (existing) {
     const s = pools.stats(existing);
     if (total_slots < s.paid + s.held) errors.push(`Slots cannot be less than ${s.paid + s.held} (already paid or reserved).`);
@@ -108,9 +112,9 @@ router.post('/products', productUpload.single('image'), verifyCsrf, (req, res) =
   let slug = slugify(p.title), i = 1;
   while (db.prepare('SELECT 1 FROM products WHERE slug = ?').get(slug)) slug = `${slugify(p.title)}-${++i}`;
   db.prepare(`INSERT INTO products (category_id, title, slug, description, image, total_price, total_slots, slot_price,
-      max_slots_per_customer, sharing_date, location_id, allow_pickup, allow_delivery, status)
+      max_slots_per_customer, sharing_date, location_id, allow_pickup, allow_delivery, allow_whole, whole_price, status)
     VALUES (@category_id, @title, @slug, @description, @image, @total_price, @total_slots, @slot_price,
-      @max_slots_per_customer, @sharing_date, @location_id, @allow_pickup, @allow_delivery, @status)`)
+      @max_slots_per_customer, @sharing_date, @location_id, @allow_pickup, @allow_delivery, @allow_whole, @whole_price, @status)`)
     .run({ ...p, slug, image: req.file ? req.file.filename : null });
   flash(req, 'success', 'Product created.');
   res.redirect('/admin/products');
@@ -127,7 +131,8 @@ router.post('/products/:id', productUpload.single('image'), verifyCsrf, (req, re
   db.prepare(`UPDATE products SET category_id=@category_id, title=@title, description=@description,
       image=COALESCE(@image, image), total_price=@total_price, total_slots=@total_slots, slot_price=@slot_price,
       max_slots_per_customer=@max_slots_per_customer, sharing_date=@sharing_date, location_id=@location_id,
-      allow_pickup=@allow_pickup, allow_delivery=@allow_delivery, status=@status WHERE id=@id`)
+      allow_pickup=@allow_pickup, allow_delivery=@allow_delivery, allow_whole=@allow_whole, whole_price=@whole_price,
+      status=@status WHERE id=@id`)
     .run({ ...p, image: req.file ? req.file.filename : null, id: existing.id });
   pools.refreshProductStatus(existing.id);
   flash(req, 'success', 'Product saved.' + (existing.slot_price !== p.slot_price ? ' New slot price applies to new orders only.' : ''));
@@ -156,8 +161,8 @@ router.get('/products/:id/participants', (req, res, next) => {
   const orders = db.prepare(`SELECT * FROM orders WHERE product_id = ? AND status IN ('paid','awaiting_confirmation','pending','refund_due') ORDER BY status != 'paid', slot_from, created_at`).all(p.id);
   if (req.query.format === 'csv') {
     const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const lines = [['Slots', 'Name', 'Phone', 'Email', 'Qty', 'Fulfilment', 'Area', 'Address', 'Total', 'Method', 'Status', 'Handed over', 'Ref'].join(',')];
-    for (const o of orders) lines.push([o.slot_from ? `${o.slot_from}-${o.slot_to}` : '', o.customer_name, o.phone, o.email, o.slots, o.fulfillment, o.delivery_area, o.delivery_address, o.total, o.payment_method, o.status, o.handed_over ? 'yes' : 'no', o.code].map(esc).join(','));
+    const lines = [['Slots', 'Name', 'Phone', 'Email', 'Type', 'Qty', 'Fulfilment', 'Area', 'Address', 'Total', 'Method', 'Status', 'Handed over', 'Ref'].join(',')];
+    for (const o of orders) lines.push([o.slot_from ? `${o.slot_from}-${o.slot_to}` : '', o.customer_name, o.phone, o.email, o.purchase_type === 'share' ? 'shares' : 'single buyer', o.slots, o.fulfillment, o.delivery_area, o.delivery_address, o.total, o.payment_method, o.status, o.handed_over ? 'yes' : 'no', o.code].map(esc).join(','));
     res.set('Content-Type', 'text/csv').attachment(`${p.slug}-participants.csv`);
     return res.send(lines.join('\n'));
   }

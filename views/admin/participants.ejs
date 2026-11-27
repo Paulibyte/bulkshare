@@ -12,7 +12,7 @@
   <tr>
     <td><b><%= o.slot_from ? (o.slot_from === o.slot_to ? '#' + o.slot_from : '#' + o.slot_from + '–' + o.slot_to) : '—' %></b></td>
     <td><a href="/admin/orders/<%= o.id %>"><%= o.customer_name %></a><br><span class="tiny muted"><%= o.phone %> · <%= o.code %></span></td>
-    <td><%= o.slots %></td>
+    <td><%= o.slots %><% if (o.purchase_type !== 'share') { %><br><span class="badge b-closed">single buyer</span><% } %></td>
     <td class="small"><%= o.fulfillment === 'pickup' ? 'Collect' : 'Delivery: ' + o.delivery_area %><% if (o.delivery_address) { %><br><span class="muted"><%= o.delivery_address %></span><% } %></td>
     <td><span class="badge b-<%= o.status %>"><%= o.status.replace('_',' ') %></span></td>
     <td><% if (o.status === 'paid') { %>

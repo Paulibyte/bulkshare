@@ -29,6 +29,13 @@
     <label class="opt" style="flex:1"><input type="checkbox" name="allow_pickup" value="1" <%= p.allow_pickup ? 'checked' : '' %>><span>Collect at sharing point</span></label>
     <label class="opt" style="flex:1"><input type="checkbox" name="allow_delivery" value="1" <%= p.allow_delivery ? 'checked' : '' %>><span>Delivery to customer</span></label>
   </div>
+  <label>Single buyer</label>
+  <label class="opt"><input type="checkbox" name="allow_whole" value="1" id="aw" <%= p.allow_whole ? 'checked' : '' %>><span>Let one person buy the whole item<small>If nobody has joined yet, one buyer can take it all. If some shares are already taken, one buyer can take all the remaining shares.</small></span></label>
+  <div id="wholebox">
+    <label for="wp">Price when one person buys it whole (₦) <span class="muted small">(optional)</span></label>
+    <input type="number" id="wp" name="whole_price" min="100" value="<%= p.whole_price || '' %>" placeholder="Leave empty to charge the full total price">
+    <span class="tiny muted">Set a lower figure to reward buying whole, e.g. ₦1,450,000 instead of ₦1,500,000. Only applies when no shares have been taken.</span>
+  </div>
   <label for="d">Description</label>
   <textarea id="d" name="description" rows="5" placeholder="Weight, breed, what each share gets, sharing arrangement..."><%= p.description || '' %></textarea>
   <label for="im">Photo <span class="muted small">(JPG/PNG/WebP, max 5MB<%= p.image ? ', leave empty to keep current' : '' %>)</span></label>
@@ -40,5 +47,7 @@
 const tp = document.getElementById('tp'), ts = document.getElementById('ts'), each = document.getElementById('each');
 function u(){ const a = +tp.value, b = +ts.value; each.textContent = a && b ? '₦' + Math.ceil(a / b).toLocaleString('en-NG') + (a % b ? ' (rounded up)' : '') : '—'; }
 tp.oninput = ts.oninput = u; u();
+const aw = document.getElementById('aw'), wb = document.getElementById('wholebox');
+const tw = () => { wb.style.display = aw.checked ? '' : 'none'; }; aw.onchange = tw; tw();
 </script>
 <%- include('../partials/footer') %>

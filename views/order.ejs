@@ -42,7 +42,7 @@
     <% } else if (o.status === 'paid') { %>
       <div class="alert success">Payment confirmed. Welcome aboard! 🎉</div>
       <div class="bankbox">
-        <div class="small muted">Your share number<%= o.slots > 1 ? 's' : '' %></div>
+        <div class="small muted"><%= o.purchase_type === 'whole' ? 'You bought the whole item' : 'Your share number' + (o.slots > 1 ? 's' : '') %></div>
         <div class="acct">#<%= o.slot_from %><%= o.slot_to !== o.slot_from ? ' – #' + o.slot_to : '' %></div>
         <p class="small" style="margin-bottom:0">Show this page or your reference <b><%= o.code %></b> <%= o.fulfillment === 'pickup' ? 'at the sharing point' : 'when your delivery arrives' %>.</p>
       </div>
@@ -77,7 +77,8 @@
   <aside class="panel">
     <h2><%= o.title %></h2>
     <dl class="facts">
-      <dt>Shares</dt><dd><%= o.slots %> × <%= naira(o.slot_price) %></dd>
+      <% if (o.purchase_type === 'share') { %><dt>Shares</dt><dd><%= o.slots %> × <%= naira(o.slot_price) %></dd>
+      <% } else { %><dt>Buying</dt><dd><%= o.purchase_type === 'whole' ? 'Whole item (all ' + o.slots + ' shares)' : 'All ' + o.slots + ' remaining shares' %><br><span class="small muted" style="font-weight:400"><%= naira(o.total - o.delivery_fee) %></span></dd><% } %>
       <% if (o.delivery_fee) { %><dt>Delivery</dt><dd><%= naira(o.delivery_fee) %></dd><% } %>
       <dt>Total</dt><dd><%= naira(o.total) %></dd>
       <dt>Name</dt><dd><%= o.customer_name %></dd>

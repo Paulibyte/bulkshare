@@ -17,7 +17,7 @@
   <tr>
     <td><a href="/admin/orders/<%= o.id %>"><%= o.code %></a></td>
     <td><%= o.customer_name %><br><span class="tiny muted"><%= o.phone %></span></td>
-    <td><%= o.title %><br><span class="tiny muted"><%= o.slots %> share(s)</span></td>
+    <td><%= o.title %><br><span class="tiny muted"><%= o.purchase_type === 'whole' ? 'whole item' : o.slots + ' share(s)' %></span></td>
     <td><%= naira(o.total) %></td>
     <td><%= o.transfer_sender || '—' %><% if (o.transfer_proof) { %><br><a class="tiny" target="_blank" href="/admin/proof/<%= o.transfer_proof %>">View receipt</a><% } %></td>
     <td><span class="badge b-<%= o.status %>"><%= o.status.replace('_',' ') %></span></td>

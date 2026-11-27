@@ -25,6 +25,7 @@
     <div class="body">
       <h3><a href="/p/<%= p.slug %>"><%= p.title %></a></h3>
       <div class="price"><%= naira(p.slot_price) %> <small>per share · total <%= naira(p.total_price) %></small></div>
+      <% if (p.whole && p.whole.type === 'whole') { %><div class="small" style="color:var(--green)">or buy it whole for <b><%= naira(p.whole.amount) %></b></div><% } %>
       <%- include('partials/progress', { s: p.stats, total: p.total_slots }) %>
       <div class="meta">
         <span>📅 Sharing: <%= fmtDate(p.sharing_date) %></span>

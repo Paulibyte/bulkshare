@@ -10,6 +10,7 @@ Group bulk-buying for Owerri. The admin lists an item (for example a cow worth â
 - Join form: number of shares (capped per customer), name, phone, email, pickup or delivery (area + address, fee added), payment method, live total
 - Bank transfer: account details with copy buttons, order reference as narration, upload receipt (image/PDF)
 - OPay: redirect to OPay Checkout (card, transfer, USSD, wallet); payment is verified with a signed status query before the share is confirmed
+- Single buyer: if the admin allows it on an item, one person can buy the whole item (optionally at a special price) or all remaining shares, without waiting for others
 - Order page with share numbers (e.g. #4â€“#5) after payment, printable receipt
 - Track order with reference + phone number
 

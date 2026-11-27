@@ -12,6 +12,7 @@
         <dt>One share costs</dt><dd style="color:var(--green)"><%= naira(p.slot_price) %></dd>
         <dt>Sharing day</dt><dd><%= fmtDate(p.sharing_date) %></dd>
         <dt>Sharing point</dt><dd><%= p.location_name || 'To be announced' %><% if (p.location_address) { %><br><span class="muted small" style="font-weight:400"><%= p.location_address %></span><% } %></dd>
+        <% if (p.allow_whole) { %><dt>Single buyer</dt><dd><%= p.whole && p.whole.type === 'whole' ? naira(p.whole.amount) + ' for the whole item' : 'Allowed' %></dd><% } %>
         <dt>Options</dt><dd><%= [p.allow_pickup && 'Collect at the market', p.allow_delivery && 'Home delivery'].filter(Boolean).join(' · ') %></dd>
       </dl>
       <% if (p.description) { %><h3>About this item</h3><p class="desc"><%= p.description %></p><% } %>
@@ -34,16 +35,27 @@
     <p class="tiny muted" <%- settings.show_reserved_count === '1' ? '' : 'hidden' %>>"Reserved" shares are held for people who have started paying. If they don't complete payment in time, the share opens up again.</p>
 
     <% if (p.status !== 'open') { %>
-      <div class="closedbox"><%= p.status === 'closed' ? 'All ' + p.total_slots + ' shares are paid for. Entry is closed.' : p.status === 'completed' ? 'This item has been shared. Thank you!' : 'This item is not taking contributors.' %></div>
+      <div class="closedbox"><%= p.status === 'closed' ? (p.boughtWhole ? 'This item was bought whole by one buyer.' : 'All ' + p.total_slots + ' shares are paid for. Entry is closed.') : p.status === 'completed' ? 'This item has been shared. Thank you!' : 'This item is not taking contributors.' %></div>
     <% } else if (s.remaining === 0) { %>
       <div class="closedbox">All shares are currently reserved. Check back in a little while in case a reservation expires.</div>
     <% } else { %>
     <form method="post" action="/p/<%= p.slug %>/join" id="joinForm">
       <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <% const wantWhole = form.purchase_type === 'whole' && p.whole; %>
+      <% if (p.whole) { %>
+      <input type="hidden" name="expected_slots" value="<%= p.whole.slots %>">
+      <label>How do you want to buy?</label>
+      <div class="opts">
+        <label class="opt"><input type="radio" name="purchase_type" value="share" <%= wantWhole ? '' : 'checked' %>><span>Join with others<small>Pay for your share(s) — <%= naira(p.slot_price) %> each</small></span></label>
+        <label class="opt"><input type="radio" name="purchase_type" value="whole" <%= wantWhole ? 'checked' : '' %>><span><%= p.whole.type === 'whole' ? 'Buy the whole item myself' : 'Buy all ' + p.whole.slots + ' remaining shares' %><small><%= naira(p.whole.amount) %><%= p.whole.saving ? ' — you save ' + naira(p.whole.saving) : '' %><%= p.whole.type === 'whole' ? ' · no waiting for others' : '' %></small></span></label>
+      </div>
+      <% } %>
+      <div id="sharebox">
       <label for="slots">How many shares?</label>
       <select name="slots" id="slots">
         <% for (let i = 1; i <= maxPick; i++) { %><option value="<%= i %>" <%= String(form.slots) === String(i) ? 'selected' : '' %>><%= i %> share<%= i > 1 ? 's' : '' %> — <%= naira(i * p.slot_price) %></option><% } %>
       </select>
+      </div>
       <div class="two">
         <div><label for="n">Full name</label><input type="text" id="n" name="customer_name" required value="<%= form.customer_name || '' %>" autocomplete="name"></div>
         <div><label for="ph">Phone number</label><input type="tel" id="ph" name="phone" required value="<%= form.phone || '' %>" placeholder="080..." autocomplete="tel"></div>
@@ -51,7 +63,7 @@
       <label for="em">Email <span class="muted small">(optional)</span></label>
       <input type="email" id="em" name="email" value="<%= form.email || '' %>" autocomplete="email">
 
-      <label>How do you want to get your share?</label>
+      <label id="getLabel">How do you want to get your share?</label>
       <div class="opts">
         <% if (p.allow_pickup) { %><label class="opt"><input type="radio" name="fulfillment" value="pickup" <%= form.fulfillment !== 'delivery' ? 'checked' : '' %>><span>Collect at the sharing point<small><%= p.location_name || 'Market in Owerri' %> · <%= fmtDate(p.sharing_date) %></small></span></label><% } %>
         <% if (p.allow_delivery) { %><label class="opt"><input type="radio" name="fulfillment" value="delivery" <%= form.fulfillment === 'delivery' || !p.allow_pickup ? 'checked' : '' %>><span>Deliver to me<small>Delivery fee depends on your area</small></span></label><% } %>
@@ -74,7 +86,7 @@
         <% if (opayEnabled) { %><label class="opt"><input type="radio" name="payment_method" value="opay" <%= form.payment_method === 'opay' ? 'checked' : '' %>><span>Pay with OPay<small>Card, bank transfer, USSD or OPay wallet — confirmed instantly</small></span></label><% } %>
       </div>
       <div class="totalbox"><span>Total to pay</span><span id="total"><%= naira(p.slot_price) %></span></div>
-      <button class="btn block">Reserve my share</button>
+      <button class="btn block" id="submitBtn">Reserve my share</button>
       <p class="tiny muted" style="margin-bottom:0">Your share is held while you pay. Entry closes automatically once all <%= p.total_slots %> shares are paid.</p>
     </form>
     <% } %>
@@ -85,15 +97,21 @@
 (function(){
   const f = document.getElementById('joinForm'); if (!f) return;
   const price = <%= p.slot_price %>;
+  const wholeAmount = <%= p.whole ? p.whole.amount : 0 %>;
+  const sb = document.getElementById('sharebox'), btn = document.getElementById('submitBtn');
   const fmt = n => '₦' + n.toLocaleString('en-NG');
   const d = document.getElementById('deliv');
   function upd(){
+    const whole = (f.querySelector('input[name=purchase_type]:checked') || {}).value === 'whole';
+    sb.style.display = whole ? 'none' : '';
+    btn.textContent = whole ? 'Reserve the whole lot' : 'Reserve my share';
+    document.getElementById('getLabel').textContent = whole ? 'How do you want to get it?' : 'How do you want to get your share?';
     const slots = +f.slots.value;
     const isDel = (f.querySelector('input[name=fulfillment]:checked') || {}).value === 'delivery';
     if (d) d.style.display = isDel ? '' : 'none';
     const opt = f.delivery_area_id && f.delivery_area_id.selectedOptions[0];
     const fee = isDel && opt ? +(opt.dataset.fee || 0) : 0;
-    document.getElementById('total').textContent = fmt(slots * price + fee) + (fee ? ' (incl. ' + fmt(fee) + ' delivery)' : '');
+    document.getElementById('total').textContent = fmt((whole ? wholeAmount : slots * price) + fee) + (fee ? ' (incl. ' + fmt(fee) + ' delivery)' : '');
   }
   f.addEventListener('change', upd); upd();
 })();

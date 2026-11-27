@@ -39,6 +39,8 @@ router.get('/p/:slug', (req, res, next) => {
   const p = db.prepare(`${PRODUCT_SQL} WHERE p.slug = ? AND p.status != 'draft'`).get(req.params.slug);
   if (!p) return next();
   p.stats = pools.stats(p);
+  p.whole = pools.wholeQuote(p, p.stats);
+  p.boughtWhole = !!db.prepare(`SELECT 1 FROM orders WHERE product_id = ? AND status = 'paid' AND purchase_type = 'whole'`).get(p.id);
   const areas = db.prepare('SELECT * FROM delivery_areas ORDER BY name').all();
   const recent = db.prepare(`SELECT customer_name, slots, paid_at FROM orders
      WHERE product_id = ? AND status = 'paid' ORDER BY paid_at DESC LIMIT 8`).all(p.id)

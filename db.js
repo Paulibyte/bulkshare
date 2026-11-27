@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS products (
   location_id INTEGER REFERENCES locations(id) ON DELETE SET NULL,
   allow_pickup INTEGER NOT NULL DEFAULT 1,
   allow_delivery INTEGER NOT NULL DEFAULT 1,
+  allow_whole INTEGER NOT NULL DEFAULT 1, -- one buyer may take the whole item / all remaining shares
+  whole_price INTEGER,                   -- optional special price when one buyer takes the whole item
   status TEXT NOT NULL DEFAULT 'open',   -- draft | open | closed | completed | cancelled
   closed_at TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -51,6 +53,7 @@ CREATE TABLE IF NOT EXISTS orders (
   delivery_fee INTEGER NOT NULL DEFAULT 0,
   total INTEGER NOT NULL,
   payment_method TEXT NOT NULL,          -- bank | opay
+  purchase_type TEXT NOT NULL DEFAULT 'share', -- share | whole | remaining
   status TEXT NOT NULL DEFAULT 'pending',
      -- pending | awaiting_confirmation | paid | rejected | expired | cancelled | refund_due | refunded
   slot_from INTEGER, slot_to INTEGER,    -- slot numbers assigned when paid
@@ -65,6 +68,16 @@ CREATE TABLE IF NOT EXISTS orders (
 CREATE INDEX IF NOT EXISTS idx_orders_product ON orders(product_id, status);
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
 `);
+
+// Upgrades for databases created by earlier versions
+function addColumn(table, col, def) {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(c => c.name);
+  if (!cols.includes(col)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`);
+}
+addColumn('products', 'allow_whole', 'INTEGER NOT NULL DEFAULT 1');
+addColumn('products', 'whole_price', 'INTEGER');
+addColumn('orders', 'purchase_type', "TEXT NOT NULL DEFAULT 'share'");
+addColumn('orders', 'opay_url', 'TEXT');
 
 const defaults = {
   site_name: 'BulkShare Owerri',
